@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public class LogController {
-    public static Map<String, List<Transaction>> creatUserTransaction(List<File> fileList) throws FileNotFoundException {
+    public static Map<String, List<Transaction>> creatUserTransaction(List<File> fileList)  {
         Map<String, List<Transaction>> UserList = new HashMap<>();
         for (File file : fileList) {
             try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -17,9 +17,7 @@ public class LogController {
                     Transaction transaction = createTransaction(line);
                     writeTransaction(UserList, transaction);
                 }
-            } catch (FileNotFoundException e){
-                throw new FileNotFoundException();
-            } catch (IOException e) {
+            } catch (IOException e){
                 throw new RuntimeException(e);
             }
 

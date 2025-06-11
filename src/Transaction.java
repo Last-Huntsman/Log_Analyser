@@ -3,7 +3,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class Transaction {
+public class Transaction implements Comparable {
     private OperationType operationType;
     private String user;
     private String userTarget;
@@ -65,5 +65,8 @@ public class Transaction {
     }
 
 
-
+    @Override
+    public int compareTo(Object o) {
+        return this.localDateTime.compareTo(((Transaction)o).getLocalDateTime());
+    }
 }
