@@ -7,6 +7,6 @@ public class Main {
         String OutputDir = "";
         final File folder = new File(InputDir);
         List<File> fileList = new LogReader().listFilesForFolder(folder);
-
+        LogController.creatUserTransaction(fileList);
     }
 }
