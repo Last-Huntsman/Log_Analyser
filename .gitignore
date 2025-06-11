@@ -2,7 +2,7 @@
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-LogsFile/transactions_by_users
+Files
 
 ### Eclipse ###
 .apt_generated

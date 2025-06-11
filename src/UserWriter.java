@@ -2,15 +2,17 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class UserWriter {
     private String outputDir;
-    UserWriter(String outputDir) {
+    public UserWriter(String outputDir) throws IOException {
         this.outputDir = outputDir;
-        new File(outputDir).mkdirs();
+        Files.createDirectories(Paths.get(outputDir)); // Создаём чистую папку
     }
     public void  writeUsersLog(Map<String,List<Transaction>> mapTransaction){
         for (String key : mapTransaction.keySet()) {
@@ -32,4 +34,6 @@ public class UserWriter {
             e.printStackTrace();
         }
     }
+
 }
+
