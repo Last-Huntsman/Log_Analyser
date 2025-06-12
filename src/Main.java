@@ -6,7 +6,10 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) {
         String inputDir = "Files/LogsFile";
-        String outputDir = "Files/transactions_by_users";
+        File inputFolder = new File(inputDir);
+        File parentFolder = inputFolder.getParentFile(); // это "Files"
+        File outputFolder = new File(parentFolder, "transactions_by_users");
+
 
         File folder = new File(inputDir);
         if (!folder.exists() || !folder.isDirectory()) {
@@ -19,7 +22,7 @@ public class Main {
 
         try {
             Map<String, List<Transaction>> mapTransaction = LogController.createUserTransactions(fileList);
-            UserWriter userWriter = new UserWriter(outputDir);
+            UserWriter userWriter = new UserWriter(outputFolder);
             userWriter.writeUsersLog(mapTransaction);
         } catch (IOException e) {
             System.err.println("Error processing files: " + e.getMessage());

@@ -1,8 +1,10 @@
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -11,12 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 public class UserWriter {
-    private String outputDir;
 
-    public UserWriter(String outputDir) throws IOException {
-        this.outputDir = outputDir;
-        Files.createDirectories(Paths.get(outputDir)); // Создаём чистую папку
+    private final Path outputDir;
+
+    public UserWriter(File outputDir) throws IOException {
+        this.outputDir = outputDir.toPath();
+        Files.createDirectories(this.outputDir);
     }
+
 
     public void writeUsersLog(Map<String, List<Transaction>> mapTransaction) {
         for (String key : mapTransaction.keySet()) {

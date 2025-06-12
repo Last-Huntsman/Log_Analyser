@@ -15,5 +15,4 @@ public class LogReader {
         }
         return  fileList;
     }
-
 }
