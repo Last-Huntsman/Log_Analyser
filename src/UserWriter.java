@@ -32,7 +32,7 @@ public class UserWriter {
             for (Transaction log : logs) {
                 writer.println(log.getString());
             }
-            writer.println(writeTotalAmount(username,logs));
+            writer.println(writeTotalAmount(username, logs));
             writer.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -53,11 +53,13 @@ public class UserWriter {
         return totalAmount;
     }
 
-    private String writeTotalAmount(String user,List<Transaction> logs) {
+    private String writeTotalAmount(String user, List<Transaction> logs) {
         BigDecimal totalAmount = calculateTotalAmount(logs);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 //        [2025-05-10 11:00:03] user001 final balance 1196.92
-        return "["+ LocalDateTime.now().format(formatter) +"] "+user+" final balance "+totalAmount;}
+        return String.format("[%s] %s final balance %s", LocalDateTime.now().format(formatter), user, totalAmount);
+
+    }
 
 }
 

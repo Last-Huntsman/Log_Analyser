@@ -2,84 +2,110 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LogController {
-    public static Map<String, List<Transaction>> creatUserTransaction(List<File> fileList)  {
-        Map<String, List<Transaction>> UserList = new HashMap<>();
+
+
+    public static Map<String, List<Transaction>> createUserTransactions(List<File> fileList) {
+        Map<String, List<Transaction>> userTransactionMap = new HashMap<>();
+
         for (File file : fileList) {
-            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 String line;
-                while ((line = br.readLine()) != null) {
-                    Transaction transaction = createTransaction(line);
-                    writeTransaction(UserList, transaction);
+                while ((line = reader.readLine()) != null) {
+                    Transaction transaction = parseTransaction(line);
+                    addTransaction(userTransactionMap, transaction);
+
+                    if (transaction.getOperationType() == OperationType.TRANSFERRED) {
+                        Transaction received = createReceivedTransaction(transaction);
+                        addTransaction(userTransactionMap, received);
+                    }
                 }
-            } catch (IOException e){
-                throw new RuntimeException(e);
-            }
-
-
-        }
-        return UserList;
-    }
-
-    private static void writeTransaction(Map<String, List<Transaction>> UserList, Transaction transaction) {
-        if (UserList.containsKey(transaction.getUser())) {
-            UserList.get(transaction.getUser()).add(transaction);
-        } else {
-            List<Transaction> list = new ArrayList<>();
-            list.add(transaction);
-            UserList.put(transaction.getUser(), list);
-        }
-        if (transaction.getUserTarget() != null) {
-            Transaction transaction2 = recreateTransaction(transaction);
-            if (UserList.containsKey(transaction2.getUser())) {
-                UserList.get(transaction2.getUser()).add(transaction2);
-            } else {
-                List<Transaction> list = new ArrayList<>();
-                list.add(transaction2);
-                UserList.put(transaction2.getUser(), list);
+            } catch (IOException e) {
+                throw new RuntimeException("Ошибка чтения файла: " + file.getName(), e);
             }
         }
+
+        return userTransactionMap;
     }
 
-    private static Transaction createTransaction(String line) {
+
+    private static Transaction parseTransaction(String line) {
         Transaction transaction = new Transaction(line);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        transaction.setLocalDateTime(LocalDateTime.parse(line.substring(1, 20), formatter));
-        String[] split = line.substring(22).split(" ");
-        transaction.setUser(split[0]);
 
-        if (split.length == 3) {
-            transaction.setOperationType(OperationType.WITHDREW);
-            transaction.setAmount(new BigDecimal(split[2]));
-        } else if (split.length == 4) {
-            transaction.setOperationType(OperationType.BALANCE_INQUIRY);
-            transaction.setAmount(new BigDecimal(split[3]));
-        } else if (split.length == 5) {
 
-            transaction.setAmount(new BigDecimal(split[2]));
-            transaction.setUserTarget(split[4]);
+        Pattern pattern = Pattern.compile("\\[(.*?)\\] (\\S+) (.*)");
+        Matcher matcher = pattern.matcher(line);
 
-            if (split[1].equals("transferred")) {
-                transaction.setOperationType(OperationType.TRANSFERRED);
-
-            } else {
-                transaction.setOperationType(OperationType.RECEIVED);
-            }
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Неверный формат строки: " + line);
         }
+
+        String timestamp = matcher.group(1);
+        String user = matcher.group(2);
+        String operationLine = matcher.group(3);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime localDateTime = LocalDateTime.parse(timestamp, formatter);
+
+        transaction.setLocalDateTime(localDateTime);
+        transaction.setUser(user);
+
+        parseOperation(operationLine, transaction);
 
         return transaction;
     }
 
-    private static Transaction recreateTransaction(Transaction transaction) {
-        String[] oldLine = transaction.getString().split(" ");
-        String newLine = transaction.getString().substring(0, 22) + oldLine[6] + " recived " + oldLine[4] + " from " + oldLine[2];
-        System.out.println(newLine);
 
-        return createTransaction(newLine);
+    private static void parseOperation(String operationLine, Transaction transaction) {
+        String[] parts = operationLine.split(" ");
+        switch (parts[0]) {
+            case "balance":
+                transaction.setOperationType(OperationType.BALANCE_INQUIRY);
+                transaction.setAmount(new BigDecimal(parts[2]));
+                break;
+            case "transferred":
+                transaction.setOperationType(OperationType.TRANSFERRED);
+                transaction.setAmount(new BigDecimal(parts[1]));
+                transaction.setUserTarget(parts[3]);
+                break;
+            case "withdrew":
+                transaction.setOperationType(OperationType.WITHDREW);
+                transaction.setAmount(new BigDecimal(parts[1]));
+                break;
+            default:
+                throw new IllegalArgumentException("Неизвестная операция: " + parts[0]);
+        }
+    }
+
+
+    private static Transaction createReceivedTransaction(Transaction original) {
+        Transaction received = new Transaction("");
+
+        received.setLocalDateTime(original.getLocalDateTime());
+        received.setUser(original.getUserTarget());
+        received.setUserTarget(original.getUser());
+        received.setAmount(original.getAmount());
+        received.setOperationType(OperationType.RECEIVED);
+
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String logLine = String.format("[%s] %s recived %s from %s",
+                received.getLocalDateTime().format(formatter),
+                received.getUser(),
+                received.getAmount(),
+                received.getUserTarget());
+
+        received.setString(logLine);
+
+        return received;
+    }
+
+
+    private static void addTransaction(Map<String, List<Transaction>> map, Transaction transaction) {
+        map.computeIfAbsent(transaction.getUser(), k -> new ArrayList<>()).add(transaction);
     }
 }
